@@ -64,12 +64,31 @@ namespace Cuke4Nuke.Core
 
         public string InvokeStep(string invocationDetails)
         {
-            string stepId = JsonMapper.ToObject(invocationDetails)["id"].ToString();
+            JsonData json = JsonMapper.ToObject(invocationDetails);
+            string stepId = json["id"].ToString();
             StepDefinition sd = _stepDefinitions.Find(s => s.Id == stepId);
+
+            List<object> args = new List<object>();
+            try
+            {
+                if (json["args"].IsArray && json["args"].Count > 0)
+                {
+                    for (int i = 0; i < json["args"].Count; i++)
+                    {
+                        string argValue = json["args"][i].ToString();
+                        Type parameterType = sd.Method.GetParameters()[i].ParameterType;
+                        object arg = Convert.ChangeType(argValue, parameterType);                        
+                        args.Add(arg);
+                    }
+                }
+            }
+            catch (KeyNotFoundException)
+            {
+            }
 
             try
             {
-                sd.Method.Invoke(null, null);
+                sd.Method.Invoke(null, args.ToArray());
             }
             catch (TargetInvocationException ex)
             {

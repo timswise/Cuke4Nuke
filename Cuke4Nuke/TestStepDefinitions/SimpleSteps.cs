@@ -22,5 +22,20 @@ namespace Cuke4Nuke.TestStepDefinitions
         {
             Assert.Fail();
         }
+
+        [Given("^a user with name (.*)$")]
+        public static void GivenUserWithName(string name)
+        {
+        }
+
+        [Given(@"^(\d+) cukes$")]
+        public static void GivenNCukes(int count)
+        {
+        }
+
+        [Given(@"^(\d+) ounces of (.*) cheese$")]
+        public static void GivenCheese(int ounces, string cheeseType)
+        {
+        }
     }
 }

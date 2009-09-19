@@ -66,29 +66,10 @@ namespace Test
 
         [Test]
         [Timeout(5000)]
-        public void ShouldRespondToListStepDefinitionsWithJsonArrayOf3Elements()
-        {
-            string response = SendCommand("list_step_definitions");
-            JsonData data = JsonMapper.ToObject(response);
-            Assert.AreEqual(3, data.Count);
-        }
-
-        [Test]
-        [Timeout(5000)]
         public void ShouldInvokePassingStepWithOkResponse()
         {
             // get the id of the simple passing step definition
-            string stepListResponse = SendCommand("list_step_definitions");
-            JsonData stepListJson = JsonMapper.ToObject(stepListResponse);
-            string stepId = "";
-            for (int i = 0; i < stepListJson.Count; i++)
-            {
-                if (stepListJson[i]["regexp"].ToString() == "^it should pass.$")
-                {
-                    stepId = stepListJson[i]["id"].ToString();
-                    break;
-                }
-            }
+            string stepId = GetStepId("^it should pass.$");
 
             // invoke that step definition and confirm response is OK
             string invokeCommand = @"invoke:{ ""id"" : """ + stepId + @""" }";
@@ -101,18 +82,8 @@ namespace Test
         [Timeout(5000)]
         public void ShouldInvokeNoAssertionStepWithOkResponse()
         {
-            // get the id of the simple passing step definition
-            string stepListResponse = SendCommand("list_step_definitions");
-            JsonData stepListJson = JsonMapper.ToObject(stepListResponse);
-            string stepId = "";
-            for (int i = 0; i < stepListJson.Count; i++)
-            {
-                if (stepListJson[i]["regexp"].ToString() == "^nothing$")
-                {
-                    stepId = stepListJson[i]["id"].ToString();
-                    break;
-                }
-            }
+            // get the id of the simple non-asserting step definition
+            string stepId = GetStepId("^nothing$");
 
             // invoke that step definition and confirm response is OK
             string invokeCommand = @"invoke:{ ""id"" : """ + stepId + @""" }";
@@ -125,24 +96,72 @@ namespace Test
         [Timeout(5000)]
         public void ShouldInvokeFailingStepWithFailResponse()
         {
-            // get the id of the simple passing step definition
-            string stepListResponse = SendCommand("list_step_definitions");
-            JsonData stepListJson = JsonMapper.ToObject(stepListResponse);
-            string stepId = "";
-            for (int i = 0; i < stepListJson.Count; i++)
-            {
-                if (stepListJson[i]["regexp"].ToString() == "^it should fail.$")
-                {
-                    stepId = stepListJson[i]["id"].ToString();
-                    break;
-                }
-            }
+            // get the id of the simple failing step definition
+            string stepId = GetStepId("^it should fail.$");
 
             // invoke that step definition and confirm response is OK
             string invokeCommand = @"invoke:{ ""id"" : """ + stepId + @""" }";
             string stepInvokeResponse = SendCommand(invokeCommand);
 
             Assert.That(stepInvokeResponse, Is.StringStarting("FAIL:"));
+        }
+
+        [Test]
+        [Timeout(5000)]
+        public void ShouldInvokeStepWithStringParameter()
+        {
+            // get the id of the simple non-asserting step definition
+            string stepId = GetStepId("^a user with name (.*)$");
+
+            // invoke that step definition and confirm response is OK
+            string invokeCommand = @"invoke:{ ""id"" : """ + stepId + @""", ""args"" : [ ""foo"" ] }";
+            string stepInvokeResponse = SendCommand(invokeCommand);
+
+            Assert.That(stepInvokeResponse, Is.EqualTo("OK"));
+        }
+
+        [Test]
+        [Timeout(5000)]
+        public void ShouldInvokeStepWithIntParameter()
+        {
+            // get the id of the simple non-asserting step definition
+            string stepId = GetStepId(@"^(\d+) cukes$");
+
+            // invoke that step definition and confirm response is OK
+            string invokeCommand = @"invoke:{ ""id"" : """ + stepId + @""", ""args"" : [ ""3"" ] }";
+            string stepInvokeResponse = SendCommand(invokeCommand);
+
+            Assert.That(stepInvokeResponse, Is.EqualTo("OK"));
+        }
+
+        [Test]
+        [Timeout(5000)]
+        public void ShouldInvokeStepWithMultipleParameters()
+        {
+            // get the id of the simple non-asserting step definition
+            string stepId = GetStepId(@"^(\d+) ounces of (.*) cheese$");
+
+            // invoke that step definition and confirm response is OK
+            string invokeCommand = @"invoke:{ ""id"" : """ + stepId + @""", ""args"" : [ ""4"", ""Cheddar"" ] }";
+            string stepInvokeResponse = SendCommand(invokeCommand);
+
+            Assert.That(stepInvokeResponse, Is.EqualTo("OK"));
+        }
+
+        private string GetStepId(string regexp)
+        {
+            string stepListResponse = SendCommand("list_step_definitions");
+            JsonData stepListJson = JsonMapper.ToObject(stepListResponse);
+            string stepId = "";
+            for (int i = 0; i < stepListJson.Count; i++)
+            {
+                if (stepListJson[i]["regexp"].ToString() == regexp)
+                {
+                    stepId = stepListJson[i]["id"].ToString();
+                    break;
+                }
+            }
+            return stepId;
         }
     }
 }
