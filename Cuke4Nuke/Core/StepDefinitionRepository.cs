@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.ComponentModel;
+using System.Reflection;
 using System.Text;
 using LitJson;
-using System.Reflection;
-using Cuke4Nuke.Framework;
 using NUnit.Framework;
+using Cuke4Nuke.Framework;
 
 namespace Cuke4Nuke.Core
 {
@@ -77,7 +77,8 @@ namespace Cuke4Nuke.Core
                     {
                         string argValue = json["args"][i].ToString();
                         Type parameterType = sd.Method.GetParameters()[i].ParameterType;
-                        object arg = Convert.ChangeType(argValue, parameterType);                        
+                        TypeConverter converter = TypeDescriptor.GetConverter(parameterType);
+                        object arg = converter.ConvertFromString(argValue);                 
                         args.Add(arg);
                     }
                 }
